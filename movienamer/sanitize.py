@@ -1,6 +1,8 @@
 import re
-
-from .keywords import *
+from movienamer.keywords import roman_numerals, year_extract_patterns
+from movienamer.keywords import case_sensitive_keywords
+from movienamer.keywords import case_insensitive_keywords
+from movienamer.keywords import regex_keywords, print_keywords
 
 
 def _replace_roman_numerals(name):
@@ -61,7 +63,7 @@ def sanitize(name):
             name = name.replace(keyword, '')
 
     name = _replace_roman_numerals(name.strip())
-    name = re.sub('[\.\-_\[\(\)\]]', ' ', name)
+    name = re.sub("[\.\-_\[\(\)\]]", ' ', name)
     name = re.sub(' +', ' ', name)
     name = name.strip()
 

@@ -2,7 +2,7 @@ import re
 
 case_sensitive_keywords = [
     'LIMITED', 'EXTENDED', 'PROPER', 'xRG', 'E-SuB', 'LiNE', 'DTS', 'ADTRG',
-    'HD', 'UNRATED'
+    'HD', 'UNRATED', "FRENCH"
 ]
 
 print_keywords = [

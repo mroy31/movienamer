@@ -4,4 +4,4 @@ dist/
 
 env/
 
-*.pyc
+**/__pycache__

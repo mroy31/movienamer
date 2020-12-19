@@ -1,18 +1,17 @@
-import os.path as path
 import re
-
+import logging
 import Levenshtein
 
-from .sanitize import sanitize
-from .tmdb import search
+from movienamer.sanitize import sanitize
+from movienamer.tmdb import search
 
 
-def _gather(filename, directory=None, titles={}):
+def _gather(filename, lang, directory=None, titles={}):
     # Sanitize the input filename
     name, year = sanitize(filename)
 
     # Start with a basic search
-    results = search(name, year)
+    results = search(name, lang, year)
 
     if year is not None and len(results) == 0:
         # If no results are found when year is present,
@@ -24,8 +23,8 @@ def _gather(filename, directory=None, titles={}):
     zero_distance_results = []
     for i, result in enumerate(results):
         distance = Levenshtein.distance(
-            unicode(re.sub('[^a-zA-Z0-9]', '', name.lower())),
-            unicode(re.sub('[^a-zA-Z0-9]', '', result['title'].lower()))
+            re.sub('[^a-zA-Z0-9]', '', name.lower()),
+            re.sub('[^a-zA-Z0-9]', '', result['title'].lower())
         )
 
         # Update the results with the distance
@@ -55,9 +54,7 @@ def _gather(filename, directory=None, titles={}):
     # accumulate results from directory one level up
     if directory is not None:
         dirname = directory.split('/')[-1]
-        results_from_directory = _gather(dirname)
-
-        results_to_be_removed = []
+        results_from_directory = _gather(dirname, lang)
 
         # Increment count for all duplicate results
         for i, r1 in enumerate(results):
@@ -73,22 +70,23 @@ def _gather(filename, directory=None, titles={}):
     return results
 
 
-def identify(filename, directory=None):
+def identify(filename, lang, directory=None):
     if directory == '' or directory == '.' or directory == '..':
         directory = None
 
-    results = _gather(filename, directory)
-    for i, result in enumerate(results):
-        # Add year to all the results
-        try:
-            results[i]['year'] = re.findall(
-                '[0-9]{4}', result['release_date'])[0]
-        except TypeError:
-            results[i]['year'] = None
-
+    results = _gather(filename, lang, directory)
     if len(results) == 0:
         return []
 
+    for i, result in enumerate(results):
+        logging.debug("Analyse result {}".format(result))
+        try:
+            results[i]['year'] = re.findall(
+                '[0-9]{4}', result['release_date'])[0]
+        except (TypeError, KeyError, IndexError):
+            results[i]['year'] = None
+
+    results = [movie for movie in results if movie["year"] is not None]
     max_distance = 1 + max([result['distance'] for result in results])
     return sorted(
         results,
